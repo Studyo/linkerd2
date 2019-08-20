@@ -13,6 +13,7 @@ web/app/yarn-error.log
 .gorun
 .golangci-lint*
 .kind-v*
+.kubectl-v*
 **/*.gogen*
 **/*.swp
 charts/*/charts/
