@@ -12,6 +12,7 @@ web/app/yarn-error.log
 .protoc
 .gorun
 .golangci-lint*
+.kind-v*
 **/*.gogen*
 **/*.swp
 charts/*/charts/
