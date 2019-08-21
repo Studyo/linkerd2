@@ -164,8 +164,8 @@ jobs:
           id=$(docker create $image)
           mkdir -p ./target/cli/linux
           docker cp "$id:/out/linkerd-linux" "./target/cli/linux/linkerd"
-        - export TAG=$(bin/linkerd version --client --short)
         - |
+          export TAG=$(bin/linkerd version --client --short)
           ssh -T travis@$REMOTE_DOCKER << EOF
             set -e
             for IMG in controller grafana proxy web ; do
