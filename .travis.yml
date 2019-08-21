@@ -112,7 +112,7 @@ jobs:
         - bin/kind create cluster --name=$KIND_CLUSTER
         # save kubeconfig to remote docker host for later stages
         # TODO: use the same ID
-        - scp $(bin/kind get kubeconfig-path --name=$KIND_CLUSTER) travis@$REMOTE_DOCKER:/tmp
+        - scp $(bin/kind get kubeconfig-path --name=$KIND_CLUSTER) $USER@$REMOTE_DOCKER:/tmp
       after_failure:
         - bin/kind delete cluster --name=$KIND_CLUSTER
 
@@ -150,10 +150,11 @@ jobs:
         - export KIND_CLUSTER=travis-$TRAVIS_BUILD_ID
         # restore kubeconfig from remote docker host
         - mkdir -p $HOME/.kube
-        - scp travis@$REMOTE_DOCKER:/tmp/kind-config-$KIND_CLUSTER $HOME/.kube
+        - scp $USER@$REMOTE_DOCKER:/tmp/kind-config-$KIND_CLUSTER $HOME/.kube
         - export KUBECONFIG=$(bin/kind get kubeconfig-path --name=$KIND_CLUSTER)
         - export KIND_PORT=$(bin/kubectl config view -o jsonpath="{.clusters[?(@.name=='$KIND_CLUSTER')].cluster.server}" | cut -d':' -f3)
-        - ssh -4 -N -L $KIND_PORT:localhost:$KIND_PORT travis@$REMOTE_DOCKER &
+        # start ssh tunnel to allow kubectl to connect via localhost
+        - ssh -4 -N -L $KIND_PORT:localhost:$KIND_PORT $USER@$REMOTE_DOCKER &
         - sleep 5 # wait for ssh tunnel to come up
         - bin/kubectl version --short
         - export PATH="`pwd`/bin:$PATH"
@@ -165,12 +166,10 @@ jobs:
           mkdir -p ./target/cli/linux
           docker cp "$id:/out/linkerd-linux" "./target/cli/linux/linkerd"
         - |
-          export TAG=$(bin/linkerd version --client --short)
-          ssh -T travis@$REMOTE_DOCKER << EOF
-            set -e
+          ssh -T $USER@$REMOTE_DOCKER << EOF
             for IMG in controller grafana proxy web ; do
               # TODO: this is using the kind binary on the remote host
-              kind load docker-image gcr.io/linkerd-io/$IMG:$TAG --name=$KIND_CLUSTER
+              kind load docker-image gcr.io/linkerd-io/\$IMG:$version --name=$KIND_CLUSTER
             done
           EOF
         - DOCKER_TRACE=1 bin/test-run `pwd`/bin/linkerd
